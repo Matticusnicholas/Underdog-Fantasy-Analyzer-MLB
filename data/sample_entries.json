@@ -1,0 +1,117 @@
+[
+  {
+    "name": "Sample Entry 1",
+    "players": [
+      {"name": "Shohei Ohtani", "team": "LAD", "position": "DH"},
+      {"name": "Mookie Betts", "team": "LAD", "position": "OF"},
+      {"name": "Freddie Freeman", "team": "LAD", "position": "1B"},
+      {"name": "Aaron Judge", "team": "NYY", "position": "OF"},
+      {"name": "Juan Soto", "team": "NYY", "position": "OF"},
+      {"name": "Ronald Acuna Jr", "team": "ATL", "position": "OF"},
+      {"name": "Corey Seager", "team": "TEX", "position": "SS"},
+      {"name": "Marcus Semien", "team": "TEX", "position": "2B"},
+      {"name": "Bobby Witt Jr", "team": "KC", "position": "SS"},
+      {"name": "Gunnar Henderson", "team": "BAL", "position": "SS"},
+      {"name": "Zack Wheeler", "team": "PHI", "position": "SP"},
+      {"name": "Corbin Burnes", "team": "BAL", "position": "SP"},
+      {"name": "Spencer Strider", "team": "ATL", "position": "SP"},
+      {"name": "Kyle Tucker", "team": "HOU", "position": "OF"},
+      {"name": "Yordan Alvarez", "team": "HOU", "position": "DH"},
+      {"name": "Mike Trout", "team": "LAA", "position": "OF"},
+      {"name": "Matt Olson", "team": "ATL", "position": "1B"},
+      {"name": "Pete Alonso", "team": "NYM", "position": "1B"}
+    ]
+  },
+  {
+    "name": "Sample Entry 2",
+    "players": [
+      {"name": "Shohei Ohtani", "team": "LAD", "position": "DH"},
+      {"name": "Mookie Betts", "team": "LAD", "position": "OF"},
+      {"name": "Aaron Judge", "team": "NYY", "position": "OF"},
+      {"name": "Juan Soto", "team": "NYY", "position": "OF"},
+      {"name": "Trea Turner", "team": "PHI", "position": "SS"},
+      {"name": "Bryce Harper", "team": "PHI", "position": "1B"},
+      {"name": "Kyle Schwarber", "team": "PHI", "position": "OF"},
+      {"name": "Corey Seager", "team": "TEX", "position": "SS"},
+      {"name": "Bobby Witt Jr", "team": "KC", "position": "SS"},
+      {"name": "Julio Rodriguez", "team": "SEA", "position": "OF"},
+      {"name": "Gerrit Cole", "team": "NYY", "position": "SP"},
+      {"name": "Zack Wheeler", "team": "PHI", "position": "SP"},
+      {"name": "Tarik Skubal", "team": "DET", "position": "SP"},
+      {"name": "Jose Ramirez", "team": "CLE", "position": "3B"},
+      {"name": "Rafael Devers", "team": "BOS", "position": "3B"},
+      {"name": "Vladimir Guerrero Jr", "team": "TOR", "position": "1B"},
+      {"name": "Bo Bichette", "team": "TOR", "position": "SS"},
+      {"name": "Marcus Semien", "team": "TEX", "position": "2B"}
+    ]
+  },
+  {
+    "name": "Sample Entry 3",
+    "players": [
+      {"name": "Ronald Acuna Jr", "team": "ATL", "position": "OF"},
+      {"name": "Matt Olson", "team": "ATL", "position": "1B"},
+      {"name": "Austin Riley", "team": "ATL", "position": "3B"},
+      {"name": "Ozzie Albies", "team": "ATL", "position": "2B"},
+      {"name": "Aaron Judge", "team": "NYY", "position": "OF"},
+      {"name": "Juan Soto", "team": "NYY", "position": "OF"},
+      {"name": "Shohei Ohtani", "team": "LAD", "position": "DH"},
+      {"name": "Freddie Freeman", "team": "LAD", "position": "1B"},
+      {"name": "Corey Seager", "team": "TEX", "position": "SS"},
+      {"name": "Adley Rutschman", "team": "BAL", "position": "C"},
+      {"name": "Spencer Strider", "team": "ATL", "position": "SP"},
+      {"name": "Max Fried", "team": "ATL", "position": "SP"},
+      {"name": "Zack Wheeler", "team": "PHI", "position": "SP"},
+      {"name": "Elly De La Cruz", "team": "CIN", "position": "SS"},
+      {"name": "Francisco Lindor", "team": "NYM", "position": "SS"},
+      {"name": "Manny Machado", "team": "SD", "position": "3B"},
+      {"name": "Fernando Tatis Jr", "team": "SD", "position": "OF"},
+      {"name": "Kyle Tucker", "team": "HOU", "position": "OF"}
+    ]
+  },
+  {
+    "name": "Sample Entry 4",
+    "players": [
+      {"name": "Kyle Tucker", "team": "HOU", "position": "OF"},
+      {"name": "Yordan Alvarez", "team": "HOU", "position": "DH"},
+      {"name": "Jose Altuve", "team": "HOU", "position": "2B"},
+      {"name": "Alex Bregman", "team": "HOU", "position": "3B"},
+      {"name": "Shohei Ohtani", "team": "LAD", "position": "DH"},
+      {"name": "Mookie Betts", "team": "LAD", "position": "OF"},
+      {"name": "Aaron Judge", "team": "NYY", "position": "OF"},
+      {"name": "Bobby Witt Jr", "team": "KC", "position": "SS"},
+      {"name": "Gunnar Henderson", "team": "BAL", "position": "SS"},
+      {"name": "Adley Rutschman", "team": "BAL", "position": "C"},
+      {"name": "Framber Valdez", "team": "HOU", "position": "SP"},
+      {"name": "Corbin Burnes", "team": "BAL", "position": "SP"},
+      {"name": "Logan Webb", "team": "SF", "position": "SP"},
+      {"name": "Bryce Harper", "team": "PHI", "position": "1B"},
+      {"name": "Trea Turner", "team": "PHI", "position": "SS"},
+      {"name": "Nico Hoerner", "team": "CHC", "position": "SS"},
+      {"name": "Ian Happ", "team": "CHC", "position": "OF"},
+      {"name": "Pete Alonso", "team": "NYM", "position": "1B"}
+    ]
+  },
+  {
+    "name": "Sample Entry 5",
+    "players": [
+      {"name": "Corey Seager", "team": "TEX", "position": "SS"},
+      {"name": "Marcus Semien", "team": "TEX", "position": "2B"},
+      {"name": "Adolis Garcia", "team": "TEX", "position": "OF"},
+      {"name": "Shohei Ohtani", "team": "LAD", "position": "DH"},
+      {"name": "Mookie Betts", "team": "LAD", "position": "OF"},
+      {"name": "Freddie Freeman", "team": "LAD", "position": "1B"},
+      {"name": "Aaron Judge", "team": "NYY", "position": "OF"},
+      {"name": "Juan Soto", "team": "NYY", "position": "OF"},
+      {"name": "Bobby Witt Jr", "team": "KC", "position": "SS"},
+      {"name": "Salvador Perez", "team": "KC", "position": "C"},
+      {"name": "Nathan Eovaldi", "team": "TEX", "position": "SP"},
+      {"name": "Zack Wheeler", "team": "PHI", "position": "SP"},
+      {"name": "Corbin Burnes", "team": "BAL", "position": "SP"},
+      {"name": "Jose Ramirez", "team": "CLE", "position": "3B"},
+      {"name": "Steven Kwan", "team": "CLE", "position": "OF"},
+      {"name": "Willy Adames", "team": "MIL", "position": "SS"},
+      {"name": "Christian Yelich", "team": "MIL", "position": "OF"},
+      {"name": "Jazz Chisholm Jr", "team": "NYY", "position": "2B"}
+    ]
+  }
+]
