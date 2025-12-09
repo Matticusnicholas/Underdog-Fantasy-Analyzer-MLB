@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}My Entries{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1><i class="bi bi-collection me-2"></i>My Entries</h1>
+        <p>Manage your draft entries</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+            <i class="bi bi-cloud-upload me-2"></i>Upload
+        </a>
+        <a href="{{ url_for('manual_entry') }}" class="btn btn-outline-primary">
+            <i class="bi bi-plus-lg me-2"></i>Add Entry
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Filter by Contest</label>
+                <select name="contest" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Contests</option>
+                    {% for contest in contests %}
+                    <option value="{{ contest.id }}" {% if selected_contest == contest.id %}selected{% endif %}>
+                        {{ contest.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if entries %}
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Entry Name</th>
+                    <th>Players</th>
+                    <th>Contest</th>
+                    <th>Source</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td><span class="text-muted">#{{ entry.id }}</span></td>
+                    <td>
+                        <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="text-decoration-none">
+                            <strong>{{ entry.entry_name or 'Entry ' ~ entry.id }}</strong>
+                        </a>
+                    </td>
+                    <td><span class="badge bg-secondary">{{ entry.players|length }} players</span></td>
+                    <td>
+                        {% if entry.contest_id %}
+                        <span class="badge bg-info">Contest #{{ entry.contest_id }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.source_type == 'screenshot' %}
+                        <i class="bi bi-image text-success" title="Screenshot"></i>
+                        {% else %}
+                        <i class="bi bi-pencil text-info" title="Manual"></i>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="text-muted">
+                            {{ entry.created_at.strftime('%b %d, %Y') if entry.created_at else '-' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('entry_detail', entry_id=entry.id) }}"
+                               class="btn btn-outline-primary" title="View">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_entry', entry_id=entry.id) }}"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Delete this entry?');">
+                                <button type="submit" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-collection display-1 text-muted mb-3"></i>
+        <h3>No Entries Found</h3>
+        <p class="text-muted mb-4">
+            {% if selected_contest %}
+            No entries in this contest yet.
+            {% else %}
+            You haven't added any draft entries yet.
+            {% endif %}
+        </p>
+        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+            <i class="bi bi-cloud-upload me-2"></i>Upload Screenshot
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

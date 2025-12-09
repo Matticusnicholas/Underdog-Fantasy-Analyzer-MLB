@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Exposure Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1><i class="bi bi-pie-chart-fill me-2"></i>Exposure Analysis</h1>
+        <p>Track your player ownership across {{ analysis.total_entries }} entries</p>
+    </div>
+    <div>
+        <select class="form-select" onchange="window.location.href='?contest=' + this.value">
+            <option value="">All Contests</option>
+            {% for contest in contests %}
+            <option value="{{ contest.id }}" {% if selected_contest == contest.id %}selected{% endif %}>
+                {{ contest.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.exposure.summary.unique_players }}</div>
+                <div class="stat-label">Unique Players</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.exposure.summary.max_exposure_players }}</div>
+                <div class="stat-label">Max Exposure (80%+)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.exposure.summary.high_exposure_players }}</div>
+                <div class="stat-label">High Exposure (50%+)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card info h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.exposure.summary.unique_teams }}</div>
+                <div class="stat-label">Teams Owned</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Player Exposure Table -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-person-lines-fill me-2"></i>Player Exposure</span>
+                <input type="text" class="form-control form-control-sm w-auto" id="playerSearch"
+                       placeholder="Search players...">
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="exposureTable">
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>Team</th>
+                                <th>Pos</th>
+                                <th>Entries</th>
+                                <th>Exposure</th>
+                                <th style="width: 150px;">Distribution</th>
+                                <th>Avg Pick</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in analysis.exposure.player_exposure[:50] %}
+                            <tr>
+                                <td><strong>{{ player.name }}</strong></td>
+                                <td><span class="badge badge-team">{{ player.team or '-' }}</span></td>
+                                <td><span class="badge badge-position">{{ player.position or '-' }}</span></td>
+                                <td>{{ player.entry_count }} / {{ player.total_entries }}</td>
+                                <td>
+                                    <span class="fw-bold {% if player.exposure_rate > 0.5 %}text-danger{% elif player.exposure_rate > 0.3 %}text-warning{% else %}text-success{% endif %}">
+                                        {{ player.exposure_rate|percentage }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="exposure-bar">
+                                        <div class="exposure-bar-fill {% if player.exposure_rate > 0.5 %}high{% elif player.exposure_rate > 0.3 %}medium{% endif %}"
+                                             style="width: {{ (player.exposure_rate * 100)|int }}%"></div>
+                                    </div>
+                                </td>
+                                <td>{{ player.avg_pick|number if player.avg_pick else '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Exposure & Charts -->
+    <div class="col-lg-4">
+        <!-- Team Exposure -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-bar-chart me-2"></i>Team Exposure
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Players</th>
+                            <th>Unique</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for team in analysis.exposure.team_exposure[:15] %}
+                        <tr>
+                            <td><span class="badge badge-team">{{ team.team }}</span></td>
+                            <td>{{ team.total_players_owned }}</td>
+                            <td>{{ team.unique_players }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Exposure Distribution Chart -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-pie-chart me-2"></i>Exposure Distribution
+            </div>
+            <div class="card-body">
+                <canvas id="exposureChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Search functionality
+document.getElementById('playerSearch').addEventListener('input', function() {
+    const search = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#exposureTable tbody tr');
+
+    rows.forEach(row => {
+        const name = row.cells[0].textContent.toLowerCase();
+        row.style.display = name.includes(search) ? '' : 'none';
+    });
+});
+
+// Exposure Distribution Chart
+const exposureRanges = {
+    '80-100%': {{ analysis.exposure.player_exposure|selectattr('exposure_rate', '>=', 0.8)|list|length }},
+    '50-80%': {{ analysis.exposure.player_exposure|selectattr('exposure_rate', '>=', 0.5)|selectattr('exposure_rate', '<', 0.8)|list|length }},
+    '20-50%': {{ analysis.exposure.player_exposure|selectattr('exposure_rate', '>=', 0.2)|selectattr('exposure_rate', '<', 0.5)|list|length }},
+    '0-20%': {{ analysis.exposure.player_exposure|selectattr('exposure_rate', '<', 0.2)|list|length }}
+};
+
+new Chart(document.getElementById('exposureChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(exposureRanges),
+        datasets: [{
+            data: Object.values(exposureRanges),
+            backgroundColor: [
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(99, 102, 241, 0.8)',
+                'rgba(16, 185, 129, 0.8)'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: '#94a3b8'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

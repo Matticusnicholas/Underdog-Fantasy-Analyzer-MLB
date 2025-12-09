@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Screenshot{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-cloud-upload me-2"></i>Upload Screenshot</h1>
+    <p>Parse your draft screenshot to extract players automatically</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <!-- File Upload -->
+                    <div class="mb-4">
+                        <label class="form-label">Screenshot Image</label>
+                        <div class="border border-2 border-dashed rounded-3 p-5 text-center" id="dropZone">
+                            <input type="file" name="screenshot" id="screenshot"
+                                   accept="image/*" class="d-none" required>
+                            <i class="bi bi-cloud-arrow-up display-3 text-muted"></i>
+                            <h5 class="mt-3">Drop image here or click to browse</h5>
+                            <p class="text-muted mb-0">Supports PNG, JPG, GIF (max 16MB)</p>
+                            <div id="fileInfo" class="mt-3 d-none">
+                                <span class="badge bg-success fs-6" id="fileName"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Entry Name (optional)</label>
+                            <input type="text" name="entry_name" class="form-control"
+                                   placeholder="e.g., Best Ball Entry #1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contest (optional)</label>
+                            <select name="contest_id" class="form-select">
+                                <option value="">No Contest</option>
+                                {% for contest in contests %}
+                                <option value="{{ contest.id }}">{{ contest.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Platform</label>
+                        <select name="platform" class="form-select">
+                            <option value="auto">Auto-Detect</option>
+                            <option value="underdog">Underdog Fantasy</option>
+                            <option value="draftkings">DraftKings</option>
+                            <option value="generic">Generic</option>
+                        </select>
+                        <div class="form-text">Auto-detect works for most screenshots</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                            <i class="bi bi-magic me-2"></i>Parse Screenshot
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-lightbulb me-2"></i>Tips for Best Results
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Use high-quality screenshots (avoid blurry images)</li>
+                    <li>Make sure player names and teams are clearly visible</li>
+                    <li>Crop the image to show only the draft results</li>
+                    <li>Standard Underdog/DraftKings export screens work best</li>
+                    <li>If OCR fails, you can still edit the results or use manual entry</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('screenshot');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+
+// Click to upload
+dropZone.addEventListener('click', () => fileInput.click());
+
+// Drag and drop
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+});
+
+dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        showFileInfo(files[0]);
+    }
+});
+
+// File selected
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        showFileInfo(e.target.files[0]);
+    }
+});
+
+function showFileInfo(file) {
+    fileName.textContent = file.name;
+    fileInfo.classList.remove('d-none');
+}
+
+// Form submit loading state
+document.getElementById('uploadForm').addEventListener('submit', function() {
+    const btn = document.getElementById('uploadBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Parsing...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}

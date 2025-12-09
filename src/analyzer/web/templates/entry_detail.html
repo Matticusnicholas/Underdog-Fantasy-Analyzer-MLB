@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entry.entry_name or 'Entry ' ~ entry.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('entries_list') }}">Entries</a></li>
+                <li class="breadcrumb-item active">{{ entry.entry_name or 'Entry ' ~ entry.id }}</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-file-earmark-text me-2"></i>{{ entry.entry_name or 'Entry ' ~ entry.id }}</h1>
+        <p>{{ entry.total_picks }} players drafted</p>
+    </div>
+    <div>
+        <form method="POST" action="{{ url_for('delete_entry', entry_id=entry.id) }}"
+              style="display: inline;"
+              onsubmit="return confirm('Are you sure you want to delete this entry?');">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-2"></i>Delete Entry
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Entry Info -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-ol me-2"></i>Drafted Players
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 60px;">Pick</th>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in players %}
+                        <tr>
+                            <td>
+                                <span class="badge bg-secondary">{{ p.pick_number }}</span>
+                            </td>
+                            <td><strong>{{ p.name }}</strong></td>
+                            <td>
+                                {% if p.team %}
+                                <span class="badge badge-team">{{ p.team }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if p.position %}
+                                <span class="badge badge-position">{{ p.position }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stacks & Info Sidebar -->
+    <div class="col-lg-4">
+        <!-- Entry Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-info-circle me-2"></i>Entry Details
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td class="text-muted">Entry ID</td>
+                        <td>#{{ entry.id }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Draft Position</td>
+                        <td>{{ entry.draft_position or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Total Picks</td>
+                        <td>{{ entry.total_picks }}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Source</td>
+                        <td>
+                            {% if entry.source_type == 'screenshot' %}
+                            <i class="bi bi-image text-success"></i> Screenshot
+                            {% else %}
+                            <i class="bi bi-pencil text-info"></i> Manual
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Created</td>
+                        <td>{{ entry.created_at.strftime('%b %d, %Y %H:%M') if entry.created_at else '-' }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Stacks in Entry -->
+        {% if stacks %}
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-stack me-2"></i>Team Stacks
+            </div>
+            <div class="card-body">
+                {% for stack in stacks %}
+                <div class="mb-3 {% if not loop.last %}pb-3 border-bottom{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge badge-team fs-6">{{ stack.mlb_team }}</span>
+                        <span class="badge bg-success">{{ stack.stack_size }}-Stack</span>
+                    </div>
+                    <div class="small">
+                        {% for player in stack.players %}
+                        <span class="d-block text-muted">• {{ player }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-stack text-muted display-6"></i>
+                <p class="text-muted mt-2 mb-0">No stacks (2+ players from same team)</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

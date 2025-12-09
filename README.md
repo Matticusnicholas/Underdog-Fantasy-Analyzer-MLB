@@ -4,12 +4,14 @@ A comprehensive tool for analyzing MLB best ball fantasy drafts. Features screen
 
 ## Features
 
+- **Beautiful Web Interface**: Modern, responsive dashboard with charts and visualizations
 - **Screenshot OCR Parser**: Parse draft screenshots from Underdog, DraftKings, and other platforms
 - **Exposure Analysis**: Track player ownership percentage across your portfolio
 - **Stack Finder**: Identify team stacks and analyze stacking patterns
 - **Correlation Analysis**: Find player pairings and N-player combinations (2, 3, 4, 5+)
 - **Database Storage**: SQLite database for storing and querying all your entries
 - **Export/Import**: JSON and CSV export for external analysis
+- **CLI & Web**: Use via command line or web browser
 
 ## Installation
 
@@ -52,6 +54,28 @@ pip install -e .
 ```
 
 ## Quick Start
+
+### Option 1: Web Interface (Recommended)
+
+The easiest way to use the analyzer is through the web interface:
+
+```bash
+# Start the web server
+python run_web.py
+
+# Open in browser
+# http://localhost:5000
+```
+
+The web interface provides:
+- **Dashboard**: Overview of your portfolio with charts
+- **Upload**: Drag & drop screenshot parsing
+- **Manual Entry**: Add entries with auto-complete
+- **Exposure**: Visual exposure analysis with filters
+- **Stacks**: Team stack breakdown and combos
+- **Correlations**: Player pairing analysis
+
+### Option 2: Command Line
 
 ### 1. Parse a Draft Screenshot
 
@@ -214,11 +238,16 @@ Underdog-Fantasy-Analyzer-MLB/
 │   ├── database/      # Data storage
 │   ├── analysis/      # Analytics engine
 │   ├── utils/         # Helpers
+│   ├── web/           # Web application
+│   │   ├── templates/ # HTML templates
+│   │   ├── static/    # CSS, JS, images
+│   │   └── app.py     # Flask routes
 │   └── cli.py         # Command line interface
 ├── data/
 │   ├── screenshots/   # Your draft screenshots
 │   ├── exports/       # Exported data
 │   └── fantasy.db     # SQLite database
+├── run_web.py         # Web app launcher
 └── tests/             # Test suite
 ```
 

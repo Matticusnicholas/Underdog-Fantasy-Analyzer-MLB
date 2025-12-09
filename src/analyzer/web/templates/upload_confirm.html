@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Parsed Players{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-check-circle me-2"></i>Confirm Parsed Players</h1>
+    <p>Review and edit the players extracted from your screenshot</p>
+</div>
+
+<form method="POST" action="{{ url_for('upload_confirm') }}">
+    <input type="hidden" name="filename" value="{{ filename }}">
+    <input type="hidden" name="entry_name" value="{{ entry_name }}">
+    <input type="hidden" name="contest_id" value="{{ contest_id }}">
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-list-check me-2"></i>Parsed Players ({{ players|length }})</span>
+                    <span class="badge bg-success">Ready to Save</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Player Name</th>
+                                <th style="width: 120px;">Team</th>
+                                <th style="width: 120px;">Position</th>
+                                <th style="width: 80px;">Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for player in players %}
+                            <tr>
+                                <td><span class="badge bg-secondary">{{ loop.index }}</span></td>
+                                <td>
+                                    <input type="text" name="player_name" class="form-control form-control-sm"
+                                           value="{{ player.name }}" required>
+                                </td>
+                                <td>
+                                    <input type="text" name="player_team" class="form-control form-control-sm"
+                                           value="{{ player.team or '' }}" placeholder="Team">
+                                </td>
+                                <td>
+                                    <input type="text" name="player_position" class="form-control form-control-sm"
+                                           value="{{ player.position or '' }}" placeholder="Pos">
+                                </td>
+                                <td>
+                                    {% if player.confidence >= 0.9 %}
+                                    <span class="badge bg-success">High</span>
+                                    {% elif player.confidence >= 0.7 %}
+                                    <span class="badge bg-warning">Med</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Low</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-gear me-2"></i>Entry Settings
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Entry Name</label>
+                        <input type="text" name="entry_name" class="form-control"
+                               value="{{ entry_name }}" placeholder="Auto-generated if empty">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Contest</label>
+                        <select name="contest_id" class="form-select">
+                            <option value="">No Contest</option>
+                            <!-- Contests would be populated here -->
+                        </select>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Tip:</strong> Edit any incorrectly parsed names before saving.
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-check-lg me-2"></i>Save Entry
+                        </button>
+                        <a href="{{ url_for('upload') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

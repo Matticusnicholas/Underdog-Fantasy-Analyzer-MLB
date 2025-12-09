@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="bi bi-grid-1x2-fill me-2"></i>Dashboard</h1>
+    <p>Overview of your MLB Best Ball portfolio</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_entries }}</div>
+                <div class="stat-label">Total Entries</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_players }}</div>
+                <div class="stat-label">Unique Players</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ stats.total_contests }}</div>
+                <div class="stat-label">Contests</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card info h-100">
+            <div class="card-body">
+                <div class="stat-value">30</div>
+                <div class="stat-label">MLB Teams</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if analysis %}
+<div class="row g-4">
+    <!-- Top Exposure -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-pie-chart-fill me-2"></i>Top Player Exposure</span>
+                <a href="{{ url_for('exposure') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Team</th>
+                            <th>Exposure</th>
+                            <th style="width: 120px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for player in analysis.exposure.player_exposure[:8] %}
+                        <tr>
+                            <td>{{ player.name }}</td>
+                            <td><span class="badge badge-team">{{ player.team or '-' }}</span></td>
+                            <td>{{ player.exposure_rate|percentage }}</td>
+                            <td>
+                                <div class="exposure-bar">
+                                    <div class="exposure-bar-fill {% if player.exposure_rate > 0.5 %}high{% elif player.exposure_rate > 0.3 %}medium{% endif %}"
+                                         style="width: {{ (player.exposure_rate * 100)|int }}%"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Stacks -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-stack me-2"></i>Top Stacked Teams</span>
+                <a href="{{ url_for('stacks') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Stacks</th>
+                            <th>Avg Size</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for team in analysis.stacks.team_summaries[:8] %}
+                        <tr>
+                            <td><span class="badge badge-team">{{ team.mlb_team }}</span></td>
+                            <td>{{ team.total_stacks }}</td>
+                            <td>{{ team.avg_stack_size|number }}</td>
+                            <td>{{ team.stack_rate|percentage }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Correlations -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-diagram-3-fill me-2"></i>Top Player Pairs</span>
+                <a href="{{ url_for('correlations') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Player 1</th>
+                            <th>Player 2</th>
+                            <th>Times</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pair in analysis.correlations.pairs[:8] %}
+                        <tr>
+                            <td>{{ pair.player1_name }}</td>
+                            <td>{{ pair.player2_name }}</td>
+                            <td>{{ pair.times_paired }}</td>
+                            <td>
+                                <span class="{% if pair.same_mlb_team %}text-success{% endif %}">
+                                    {{ pair.correlation_rate|percentage }}
+                                    {% if pair.same_mlb_team %}<i class="bi bi-link-45deg"></i>{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Exposure Chart -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-bar-chart-fill me-2"></i>Team Exposure Distribution
+            </div>
+            <div class="card-body">
+                <canvas id="teamExposureChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-cloud-upload display-1 text-muted mb-3"></i>
+        <h3>No Entries Yet</h3>
+        <p class="text-muted mb-4">Upload a screenshot or manually add your draft entries to get started.</p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                <i class="bi bi-cloud-upload me-2"></i>Upload Screenshot
+            </a>
+            <a href="{{ url_for('manual_entry') }}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square me-2"></i>Manual Entry
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if analysis %}
+<script>
+// Team Exposure Chart
+const teamData = {{ analysis.exposure.team_exposure[:10]|map(attribute='team')|list|tojson }};
+const teamPlayers = {{ analysis.exposure.team_exposure[:10]|map(attribute='total_players_owned')|list|tojson }};
+
+new Chart(document.getElementById('teamExposureChart'), {
+    type: 'bar',
+    data: {
+        labels: teamData,
+        datasets: [{
+            label: 'Players Owned',
+            data: teamPlayers,
+            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+            borderColor: 'rgba(99, 102, 241, 1)',
+            borderWidth: 1,
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

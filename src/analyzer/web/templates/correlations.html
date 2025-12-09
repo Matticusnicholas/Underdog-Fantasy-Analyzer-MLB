@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Correlation Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1><i class="bi bi-diagram-3-fill me-2"></i>Correlation Analysis</h1>
+        <p>Find player combinations across {{ analysis.total_entries }} entries</p>
+    </div>
+    <div>
+        <select class="form-select" onchange="window.location.href='?contest=' + this.value">
+            <option value="">All Contests</option>
+            {% for contest in contests %}
+            <option value="{{ contest.id }}" {% if selected_contest == contest.id %}selected{% endif %}>
+                {{ contest.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.correlations.summary.total_unique_pairs }}</div>
+                <div class="stat-label">Unique Pairs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.correlations.summary.same_team_pairs }}</div>
+                <div class="stat-label">Same Team Pairs</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.correlations.summary.high_correlation_pairs }}</div>
+                <div class="stat-label">High Corr (50%+)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card info h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.correlations.summary.get('3_player_combos', 0) }}</div>
+                <div class="stat-label">3-Player Combos</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Player Pairs -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people me-2"></i>Top Player Pairs</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="sameTeamFilter">
+                    <label class="form-check-label small" for="sameTeamFilter">Same team only</label>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="pairsTable">
+                        <thead>
+                            <tr>
+                                <th>Player 1</th>
+                                <th>Player 2</th>
+                                <th>Same Team</th>
+                                <th>Times</th>
+                                <th>Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pair in analysis.correlations.pairs[:30] %}
+                            <tr data-same-team="{{ 'yes' if pair.same_mlb_team else 'no' }}">
+                                <td>
+                                    <strong>{{ pair.player1_name }}</strong>
+                                    <br><small class="text-muted">{{ pair.player1_team or '-' }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ pair.player2_name }}</strong>
+                                    <br><small class="text-muted">{{ pair.player2_team or '-' }}</small>
+                                </td>
+                                <td>
+                                    {% if pair.same_mlb_team %}
+                                    <span class="badge bg-success"><i class="bi bi-link-45deg"></i> Yes</span>
+                                    {% else %}
+                                    <span class="text-muted">No</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ pair.times_paired }}</strong></td>
+                                <td>
+                                    <span class="fw-bold {% if pair.correlation_rate > 0.5 %}text-danger{% elif pair.correlation_rate > 0.3 %}text-warning{% endif %}">
+                                        {{ pair.correlation_rate|percentage }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Player Combos -->
+    <div class="col-lg-5">
+        <!-- 3-Player Combos -->
+        {% if analysis.correlations.groups.get(3) %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-diagram-3 me-2"></i>3-Player Combinations
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Players</th>
+                            <th>Count</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in analysis.correlations.groups[3][:10] %}
+                        <tr>
+                            <td>
+                                <small>{{ group.players|join(' + ') }}</small>
+                            </td>
+                            <td><strong>{{ group.occurrences }}</strong></td>
+                            <td>{{ group.occurrence_rate|percentage }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 4-Player Combos -->
+        {% if analysis.correlations.groups.get(4) %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-diagram-3 me-2"></i>4-Player Combinations
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Players</th>
+                            <th>Count</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in analysis.correlations.groups[4][:8] %}
+                        <tr>
+                            <td>
+                                <small>{{ group.players|join(' + ') }}</small>
+                            </td>
+                            <td><strong>{{ group.occurrences }}</strong></td>
+                            <td>{{ group.occurrence_rate|percentage }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 5-Player Combos -->
+        {% if analysis.correlations.groups.get(5) %}
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-diagram-3 me-2"></i>5-Player Combinations
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Players</th>
+                            <th>Count</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in analysis.correlations.groups[5][:5] %}
+                        <tr>
+                            <td>
+                                <small>{{ group.players|join(' + ') }}</small>
+                            </td>
+                            <td><strong>{{ group.occurrences }}</strong></td>
+                            <td>{{ group.occurrence_rate|percentage }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Correlation Tips -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-lightbulb me-2"></i>Understanding Correlations
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li class="mb-2"><strong>Same Team Pairs:</strong> Players from the same MLB team tend to correlate positively.</li>
+                    <li class="mb-2"><strong>High Correlation (50%+):</strong> These are your core building blocks.</li>
+                    <li><strong>Diverse Combos:</strong> Mix high and low correlation pairs for balance.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Same team filter
+document.getElementById('sameTeamFilter').addEventListener('change', function() {
+    const rows = document.querySelectorAll('#pairsTable tbody tr');
+    const showSameTeamOnly = this.checked;
+
+    rows.forEach(row => {
+        if (showSameTeamOnly && row.dataset.sameTeam !== 'yes') {
+            row.style.display = 'none';
+        } else {
+            row.style.display = '';
+        }
+    });
+});
+</script>
+{% endblock %}

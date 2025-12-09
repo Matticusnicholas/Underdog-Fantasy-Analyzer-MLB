@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Stack Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h1><i class="bi bi-stack me-2"></i>Stack Analysis</h1>
+        <p>Analyze team stacks across {{ analysis.total_entries }} entries</p>
+    </div>
+    <div>
+        <select class="form-select" onchange="window.location.href='?contest=' + this.value">
+            <option value="">All Contests</option>
+            {% for contest in contests %}
+            <option value="{{ contest.id }}" {% if selected_contest == contest.id %}selected{% endif %}>
+                {{ contest.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.stacks.summary.total_stacks }}</div>
+                <div class="stat-label">Total Stacks</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card success h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.stacks.summary.stack_coverage|percentage }}</div>
+                <div class="stat-label">Stack Coverage</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card warning h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.stacks.summary.avg_stack_size|number }}</div>
+                <div class="stat-label">Avg Stack Size</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card info h-100">
+            <div class="card-body">
+                <div class="stat-value">{{ analysis.stacks.summary.unique_teams_stacked }}</div>
+                <div class="stat-label">Teams Stacked</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Team Stack Summary -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-table me-2"></i>Team Stack Summary
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                <th>Total Stacks</th>
+                                <th>Avg Size</th>
+                                <th>Max Size</th>
+                                <th>Entries</th>
+                                <th>Stack Rate</th>
+                                <th>Distribution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for team in analysis.stacks.team_summaries %}
+                            <tr>
+                                <td><span class="badge badge-team fs-6">{{ team.mlb_team }}</span></td>
+                                <td><strong>{{ team.total_stacks }}</strong></td>
+                                <td>{{ team.avg_stack_size|number }}</td>
+                                <td>
+                                    <span class="badge {% if team.max_stack_size >= 4 %}bg-success{% elif team.max_stack_size >= 3 %}bg-warning{% else %}bg-secondary{% endif %}">
+                                        {{ team.max_stack_size }}
+                                    </span>
+                                </td>
+                                <td>{{ team.entries_with_stack }}</td>
+                                <td>
+                                    <span class="fw-bold">{{ team.stack_rate|percentage }}</span>
+                                </td>
+                                <td>
+                                    <div class="exposure-bar">
+                                        <div class="exposure-bar-fill" style="width: {{ (team.stack_rate * 100)|int }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Common Stack Combos -->
+        {% if analysis.stacks.stack_combos %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-collection me-2"></i>Common Stack Combinations
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Players</th>
+                            <th>Size</th>
+                            <th>Count</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for combo in analysis.stacks.stack_combos[:15] %}
+                        <tr>
+                            <td><span class="badge badge-team">{{ combo.mlb_team }}</span></td>
+                            <td>
+                                <small>{{ combo.players|join(', ') }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-success">{{ combo.stack_size }}</span>
+                            </td>
+                            <td><strong>{{ combo.occurrences }}</strong></td>
+                            <td>{{ combo.occurrence_rate|percentage }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Stack Size Distribution -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-bar-chart me-2"></i>Stacks by Size
+            </div>
+            <div class="card-body">
+                <canvas id="stackSizeChart" height="250"></canvas>
+            </div>
+        </div>
+
+        <!-- Stack Tips -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightbulb me-2"></i>Stacking Strategy
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6 class="text-success"><i class="bi bi-check-circle me-1"></i> Good Practices</h6>
+                    <ul class="small mb-0">
+                        <li>3-4 player stacks from elite offenses</li>
+                        <li>Stack multiple games per entry</li>
+                        <li>Target high-scoring environments</li>
+                    </ul>
+                </div>
+                <div>
+                    <h6 class="text-danger"><i class="bi bi-exclamation-circle me-1"></i> Watch Out</h6>
+                    <ul class="small mb-0">
+                        <li>Avoid 5+ player stacks (too correlated)</li>
+                        <li>Don't stack weak offenses</li>
+                        <li>Balance stack exposure across teams</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Stack Size Distribution Chart
+const stackSizes = {{ analysis.stacks.summary.stacks_by_size|tojson }};
+const labels = Object.keys(stackSizes).map(k => k + '-Stack');
+const data = Object.values(stackSizes);
+
+new Chart(document.getElementById('stackSizeChart'), {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Count',
+            data: data,
+            backgroundColor: [
+                'rgba(99, 102, 241, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(139, 92, 246, 0.8)'
+            ],
+            borderRadius: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    color: '#94a3b8'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
