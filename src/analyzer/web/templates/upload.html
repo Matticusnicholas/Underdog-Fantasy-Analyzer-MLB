@@ -1,139 +1,614 @@
 {% extends "base.html" %}
 
-{% block title %}Upload Screenshot{% endblock %}
+{% block title %}Add Teams{% endblock %}
+
+{% block extra_css %}
+<style>
+    .paste-zone {
+        border: 3px dashed rgba(99, 102, 241, 0.5);
+        border-radius: 1rem;
+        padding: 3rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: rgba(99, 102, 241, 0.05);
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .paste-zone:hover, .paste-zone.active {
+        border-color: #6366f1;
+        background: rgba(99, 102, 241, 0.15);
+        transform: scale(1.01);
+    }
+
+    .paste-zone.has-image {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 1.5rem;
+    }
+
+    .paste-icon {
+        font-size: 4rem;
+        color: #6366f1;
+        margin-bottom: 1rem;
+    }
+
+    .preview-container {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+    }
+
+    .preview-image {
+        max-height: 250px;
+        max-width: 100%;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .preview-badge {
+        position: absolute;
+        top: -12px;
+        right: -12px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .preview-remove {
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        transition: transform 0.2s;
+    }
+
+    .preview-remove:hover {
+        transform: scale(1.1);
+    }
+
+    .keyboard-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+    }
+
+    .key {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.25rem 0.6rem;
+        border-radius: 0.25rem;
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 0.85rem;
+    }
+
+    .entry-counter {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .entry-counter .count {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .recent-entries {
+        max-height: 350px;
+        overflow-y: auto;
+    }
+
+    .recent-entry {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .recent-entry:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .processing-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .processing-overlay.show {
+        display: flex;
+    }
+
+    .processing-card {
+        background: #1e293b;
+        padding: 2.5rem 3.5rem;
+        border-radius: 1rem;
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .spinner-large {
+        width: 60px;
+        height: 60px;
+        border-width: 4px;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 auto 0.75rem;
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1><i class="bi bi-cloud-upload me-2"></i>Upload Screenshot</h1>
-    <p>Parse your draft screenshot to extract players automatically</p>
+    <h1><i class="bi bi-clipboard-plus me-2"></i>Add Teams</h1>
+    <p>Paste screenshots of your draft results - one team at a time</p>
 </div>
 
-<div class="row justify-content-center">
+<div class="row">
     <div class="col-lg-8">
-        <div class="card">
+        <!-- Main Paste Zone -->
+        <div class="card mb-4">
             <div class="card-body p-4">
-                <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                    <!-- File Upload -->
-                    <div class="mb-4">
-                        <label class="form-label">Screenshot Image</label>
-                        <div class="border border-2 border-dashed rounded-3 p-5 text-center" id="dropZone">
-                            <input type="file" name="screenshot" id="screenshot"
-                                   accept="image/*" class="d-none" required>
-                            <i class="bi bi-cloud-arrow-up display-3 text-muted"></i>
-                            <h5 class="mt-3">Drop image here or click to browse</h5>
-                            <p class="text-muted mb-0">Supports PNG, JPG, GIF (max 16MB)</p>
-                            <div id="fileInfo" class="mt-3 d-none">
-                                <span class="badge bg-success fs-6" id="fileName"></span>
-                            </div>
+                <div class="paste-zone" id="pasteZone" tabindex="0">
+                    <!-- Empty State -->
+                    <div id="emptyState">
+                        <i class="bi bi-clipboard-plus paste-icon"></i>
+                        <h3>Paste Your Screenshot</h3>
+                        <p class="text-muted mb-2">
+                            Take a screenshot of your draft results and paste it here
+                        </p>
+                        <div class="keyboard-hint">
+                            <span class="key">Ctrl</span> + <span class="key">V</span>
+                            <span class="text-muted mx-2">or</span>
+                            <span class="key">⌘</span> + <span class="key">V</span>
                         </div>
+                        <div class="mt-3 text-muted">— or —</div>
+                        <button type="button" class="btn btn-outline-primary mt-3" onclick="document.getElementById('fileInput').click()">
+                            <i class="bi bi-folder2-open me-2"></i>Browse Files
+                        </button>
+                        <input type="file" id="fileInput" accept="image/*" class="d-none">
                     </div>
 
-                    <!-- Options -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Entry Name (optional)</label>
-                            <input type="text" name="entry_name" class="form-control"
-                                   placeholder="e.g., Best Ball Entry #1">
+                    <!-- Preview State -->
+                    <div id="previewState" class="d-none">
+                        <div class="preview-container">
+                            <span class="preview-badge"><i class="bi bi-check-lg me-1"></i>Ready</span>
+                            <button type="button" class="preview-remove" onclick="clearImage()" title="Remove">
+                                <i class="bi bi-x"></i>
+                            </button>
+                            <img id="previewImage" class="preview-image" src="" alt="Screenshot Preview">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Entry Form (shown after paste) -->
+                <form id="entryForm" class="mt-4 d-none">
+                    <input type="hidden" name="image_data" id="imageData">
+
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">Contest (optional)</label>
-                            <select name="contest_id" class="form-select">
-                                <option value="">No Contest</option>
+                            <label class="form-label">Entry Name <span class="text-muted">(optional)</span></label>
+                            <input type="text" name="entry_name" id="entryName" class="form-control"
+                                   placeholder="Auto-generated if empty">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Contest</label>
+                            <select name="contest_id" id="contestId" class="form-select">
+                                <option value="">None</option>
                                 {% for contest in contests %}
                                 <option value="{{ contest.id }}">{{ contest.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Platform</label>
+                            <select name="platform" id="platform" class="form-select">
+                                <option value="auto">Auto</option>
+                                <option value="underdog">Underdog</option>
+                                <option value="draftkings">DraftKings</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Platform</label>
-                        <select name="platform" class="form-select">
-                            <option value="auto">Auto-Detect</option>
-                            <option value="underdog">Underdog Fantasy</option>
-                            <option value="draftkings">DraftKings</option>
-                            <option value="generic">Generic</option>
-                        </select>
-                        <div class="form-text">Auto-detect works for most screenshots</div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
-                            <i class="bi bi-magic me-2"></i>Parse Screenshot
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="parseBtn">
+                            <i class="bi bi-magic me-2"></i>Parse & Save Team
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-lg" onclick="clearImage()">
+                            <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Tips -->
-        <div class="card mt-4">
+        <!-- How It Works -->
+        <div class="card">
             <div class="card-header">
-                <i class="bi bi-lightbulb me-2"></i>Tips for Best Results
+                <i class="bi bi-info-circle me-2"></i>How It Works
+            </div>
+            <div class="card-body py-4">
+                <div class="row text-center">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="step-number">1</div>
+                        <h6>Screenshot</h6>
+                        <p class="text-muted small mb-0">Take a screenshot of your draft results</p>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="step-number">2</div>
+                        <h6>Paste</h6>
+                        <p class="text-muted small mb-0">Press Ctrl+V to paste it here</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="step-number">3</div>
+                        <h6>Repeat</h6>
+                        <p class="text-muted small mb-0">Add your next team!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Entry Counter -->
+        <div class="entry-counter">
+            <div class="count" id="entryCount">{{ entry_count or 0 }}</div>
+            <div class="mt-1">Teams Added</div>
+        </div>
+
+        <!-- Recent Entries -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-clock-history me-2"></i>Recent</span>
+                <a href="{{ url_for('entries_list') }}" class="btn btn-sm btn-outline-primary">All</a>
+            </div>
+            <div class="card-body p-2">
+                <div class="recent-entries" id="recentEntries">
+                    {% if recent_entries %}
+                        {% for entry in recent_entries %}
+                        <div class="recent-entry">
+                            <div>
+                                <strong>{{ entry.entry_name or 'Entry ' ~ entry.id }}</strong>
+                                <br><small class="text-muted">{{ entry.players|length }} players</small>
+                            </div>
+                            <a href="{{ url_for('entry_detail', entry_id=entry.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center py-4 mb-0">
+                            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                            No entries yet
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning me-2"></i>Quick Actions
             </div>
             <div class="card-body">
-                <ul class="mb-0">
-                    <li>Use high-quality screenshots (avoid blurry images)</li>
-                    <li>Make sure player names and teams are clearly visible</li>
-                    <li>Crop the image to show only the draft results</li>
-                    <li>Standard Underdog/DraftKings export screens work best</li>
-                    <li>If OCR fails, you can still edit the results or use manual entry</li>
-                </ul>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('manual_entry') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil-square me-2"></i>Manual Entry
+                    </a>
+                    <a href="{{ url_for('exposure') }}" class="btn btn-outline-success">
+                        <i class="bi bi-pie-chart me-2"></i>View Exposure
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Processing Overlay -->
+<div class="processing-overlay" id="processingOverlay">
+    <div class="processing-card">
+        <div class="spinner-border spinner-large text-primary mb-3" role="status"></div>
+        <h4>Parsing Screenshot...</h4>
+        <p class="text-muted mb-0">Extracting player information</p>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('screenshot');
-const fileInfo = document.getElementById('fileInfo');
-const fileName = document.getElementById('fileName');
+const pasteZone = document.getElementById('pasteZone');
+const emptyState = document.getElementById('emptyState');
+const previewState = document.getElementById('previewState');
+const previewImage = document.getElementById('previewImage');
+const entryForm = document.getElementById('entryForm');
+const imageData = document.getElementById('imageData');
+const fileInput = document.getElementById('fileInput');
+const processingOverlay = document.getElementById('processingOverlay');
 
-// Click to upload
-dropZone.addEventListener('click', () => fileInput.click());
+let currentImageData = null;
 
-// Drag and drop
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
-});
+// Focus paste zone on load
+setTimeout(() => pasteZone.focus(), 100);
 
-dropZone.addEventListener('dragleave', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
-});
+// Handle paste event globally (so it works anywhere on the page)
+document.addEventListener('paste', handlePaste);
 
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        fileInput.files = files;
-        showFileInfo(files[0]);
+// Handle click to focus
+pasteZone.addEventListener('click', (e) => {
+    if (!currentImageData && e.target === pasteZone || e.target.closest('#emptyState')) {
+        pasteZone.focus();
     }
 });
 
-// File selected
+// Handle file input change
 fileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
-        showFileInfo(e.target.files[0]);
+        loadImageFile(e.target.files[0]);
     }
 });
 
-function showFileInfo(file) {
-    fileName.textContent = file.name;
-    fileInfo.classList.remove('d-none');
+// Handle drag and drop
+pasteZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    pasteZone.classList.add('active');
+});
+
+pasteZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    pasteZone.classList.remove('active');
+});
+
+pasteZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    pasteZone.classList.remove('active');
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
+        loadImageFile(files[0]);
+    }
+});
+
+function handlePaste(e) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let item of items) {
+        if (item.type.startsWith('image/')) {
+            e.preventDefault();
+            const file = item.getAsFile();
+            loadImageFile(file);
+            break;
+        }
+    }
 }
 
-// Form submit loading state
-document.getElementById('uploadForm').addEventListener('submit', function() {
-    const btn = document.getElementById('uploadBtn');
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Parsing...';
-    btn.disabled = true;
+function loadImageFile(file) {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        currentImageData = e.target.result;
+
+        // Show preview
+        previewImage.src = currentImageData;
+        emptyState.classList.add('d-none');
+        previewState.classList.remove('d-none');
+        pasteZone.classList.add('has-image');
+        entryForm.classList.remove('d-none');
+
+        // Set form data
+        imageData.value = currentImageData;
+
+        // Focus the entry name field
+        document.getElementById('entryName').focus();
+    };
+
+    reader.readAsDataURL(file);
+}
+
+function clearImage() {
+    currentImageData = null;
+    previewImage.src = '';
+    imageData.value = '';
+
+    emptyState.classList.remove('d-none');
+    previewState.classList.add('d-none');
+    pasteZone.classList.remove('has-image');
+    entryForm.classList.add('d-none');
+
+    fileInput.value = '';
+    document.getElementById('entryName').value = '';
+
+    setTimeout(() => pasteZone.focus(), 100);
+}
+
+// Form submission via AJAX
+entryForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!currentImageData) {
+        showToast('Please paste an image first', 'error');
+        return;
+    }
+
+    processingOverlay.classList.add('show');
+    const parseBtn = document.getElementById('parseBtn');
+    parseBtn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('image_data', currentImageData);
+        formData.append('entry_name', document.getElementById('entryName').value);
+        formData.append('contest_id', document.getElementById('contestId').value);
+        formData.append('platform', document.getElementById('platform').value);
+
+        const response = await fetch('{{ url_for("upload_paste") }}', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Update counter
+            const counter = document.getElementById('entryCount');
+            counter.textContent = parseInt(counter.textContent) + 1;
+
+            // Add to recent entries list
+            addRecentEntry(result.entry);
+
+            // Show success toast
+            showToast(`Saved "${result.entry.name}" with ${result.entry.player_count} players!`, 'success');
+
+            // Clear for next entry
+            clearImage();
+
+        } else if (result.redirect) {
+            // Needs confirmation - redirect to confirmation page
+            window.location.href = result.redirect;
+        } else {
+            showToast(result.error || 'Failed to parse screenshot', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error processing screenshot. Try again.', 'error');
+    } finally {
+        processingOverlay.classList.remove('show');
+        parseBtn.disabled = false;
+    }
+});
+
+function addRecentEntry(entry) {
+    const container = document.getElementById('recentEntries');
+
+    // Remove empty state message if present
+    const emptyMsg = container.querySelector('p.text-muted');
+    if (emptyMsg) emptyMsg.remove();
+
+    // Create new entry element
+    const entryDiv = document.createElement('div');
+    entryDiv.className = 'recent-entry';
+    entryDiv.style.animation = 'slideIn 0.3s ease';
+    entryDiv.innerHTML = `
+        <div>
+            <strong>${entry.name}</strong>
+            <br><small class="text-muted">${entry.player_count} players</small>
+        </div>
+        <a href="/entry/${entry.id}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-eye"></i>
+        </a>
+    `;
+
+    // Insert at top
+    container.insertBefore(entryDiv, container.firstChild);
+
+    // Keep only last 6 entries in list
+    const entries = container.querySelectorAll('.recent-entry');
+    if (entries.length > 6) {
+        entries[entries.length - 1].remove();
+    }
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} mb-2`;
+    toast.style.animation = 'slideIn 0.3s ease';
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+            <span class="flex-grow-1">${message}</span>
+            <button type="button" class="btn-close btn-close-white ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// Keyboard shortcut hints
+document.addEventListener('keydown', (e) => {
+    // Focus paste zone with Escape
+    if (e.key === 'Escape' && currentImageData) {
+        clearImage();
+    }
 });
 </script>
 {% endblock %}

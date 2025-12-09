@@ -3,6 +3,8 @@ Flask web application for the Fantasy Analyzer.
 """
 
 import os
+import io
+import base64
 import json
 from datetime import datetime
 from pathlib import Path
@@ -10,6 +12,7 @@ from typing import Optional
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
+from PIL import Image
 
 # Import analyzer modules
 from ..database.manager import DatabaseManager
@@ -156,6 +159,14 @@ def delete_entry(entry_id: int):
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     """Upload and parse screenshot."""
+    db = get_db()
+    contests = db.get_all_contests()
+
+    # Get recent entries for sidebar
+    all_entries = db.get_all_draft_entries()
+    recent_entries = all_entries[:6] if all_entries else []
+    entry_count = len(all_entries)
+
     if request.method == 'POST':
         # Check if file was uploaded
         if 'screenshot' not in request.files:
@@ -204,9 +215,83 @@ def upload():
             return redirect(request.url)
 
     # GET request - show upload form
-    db = get_db()
-    contests = db.get_all_contests()
-    return render_template('upload.html', contests=contests)
+    return render_template('upload.html',
+                           contests=contests,
+                           recent_entries=recent_entries,
+                           entry_count=entry_count)
+
+
+@app.route('/upload/paste', methods=['POST'])
+def upload_paste():
+    """Handle pasted screenshot via AJAX."""
+    try:
+        image_data = request.form.get('image_data')
+        entry_name = request.form.get('entry_name')
+        contest_id = request.form.get('contest_id', type=int)
+        platform = request.form.get('platform', 'auto')
+
+        if not image_data:
+            return jsonify({'success': False, 'error': 'No image data received'})
+
+        # Parse base64 image
+        if ',' in image_data:
+            image_data = image_data.split(',')[1]
+
+        image_bytes = base64.b64decode(image_data)
+
+        # Save image file
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"paste_{timestamp}.png"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Convert and save
+        image = Image.open(io.BytesIO(image_bytes))
+        image.save(filepath, 'PNG')
+
+        # Try to parse
+        try:
+            from ..ocr.parser import DraftScreenshotParser
+            parser = DraftScreenshotParser()
+            players = parser.parse_screenshot(filepath, platform)
+
+            if not players:
+                return jsonify({
+                    'success': False,
+                    'error': 'No players found in image. Try manual entry or check image quality.'
+                })
+
+            # Auto-generate entry name if not provided
+            if not entry_name:
+                entry_name = f"Entry {datetime.now().strftime('%m/%d %H:%M')}"
+
+            # Save to database
+            db = get_db()
+            entry = db.create_draft_entry(
+                player_names=[p.name for p in players],
+                player_teams=[p.team for p in players],
+                player_positions=[p.position for p in players],
+                contest_id=contest_id if contest_id else None,
+                entry_name=entry_name,
+                source_file=filename
+            )
+
+            return jsonify({
+                'success': True,
+                'entry': {
+                    'id': entry.id,
+                    'name': entry_name,
+                    'player_count': len(players)
+                }
+            })
+
+        except ImportError:
+            return jsonify({
+                'success': False,
+                'error': 'OCR not available. Install tesseract and pytesseract.'
+            })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 
 @app.route('/upload/confirm', methods=['POST'])
