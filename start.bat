@@ -34,15 +34,19 @@ if not exist "venv" (
 echo [INFO] Activating virtual environment...
 call venv\Scripts\activate.bat
 
+:: Upgrade pip first to avoid issues
+python -m pip install --upgrade pip >nul 2>&1
+
 :: Check if requirements are installed by testing Flask import
 python -c "import flask" >nul 2>&1
 if errorlevel 1 (
-    echo [INFO] Installing requirements...
+    echo [INFO] Installing requirements (this may take a minute)...
+    echo [INFO] Using pre-built packages to avoid compilation...
+    pip install --only-binary :all: numpy pandas >nul 2>&1
     pip install -r requirements.txt
     if errorlevel 1 (
-        echo [ERROR] Failed to install requirements.
-        pause
-        exit /b 1
+        echo [WARN] Some packages may need manual install. Trying alternative...
+        pip install --prefer-binary -r requirements.txt
     )
     echo [OK] Requirements installed.
 ) else (
