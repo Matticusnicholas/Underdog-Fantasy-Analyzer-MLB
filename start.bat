@@ -9,47 +9,49 @@ echo ║              Starting Web Application...                  ║
 echo ╚═══════════════════════════════════════════════════════════╝
 echo.
 
-:: Find Python - try multiple methods
+:: Find Python - prefer stable versions (3.12, 3.11) over bleeding edge (3.14)
 set PYTHON_CMD=
 
-:: Method 1: Try 'python' command
-python --version >nul 2>&1
+:: Method 1: Try 'py' launcher with specific stable versions first
+:: Python 3.14 is in development and lacks pre-built packages
+py -3.12 --version >nul 2>&1
 if not errorlevel 1 (
-    set PYTHON_CMD=python
+    set PYTHON_CMD=py -3.12
     goto :found_python
 )
 
-:: Method 2: Try 'py' launcher (Windows Python Launcher)
-py --version >nul 2>&1
+py -3.11 --version >nul 2>&1
 if not errorlevel 1 (
-    set PYTHON_CMD=py
+    set PYTHON_CMD=py -3.11
     goto :found_python
 )
 
-:: Method 3: Try 'python3' command
-python3 --version >nul 2>&1
+py -3.13 --version >nul 2>&1
 if not errorlevel 1 (
-    set PYTHON_CMD=python3
+    set PYTHON_CMD=py -3.13
     goto :found_python
 )
 
-:: Method 4: Try common installation paths
+py -3.10 --version >nul 2>&1
+if not errorlevel 1 (
+    set PYTHON_CMD=py -3.10
+    goto :found_python
+)
+
+:: Method 2: Try common installation paths (prefer stable versions)
 for %%P in (
-    "%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
     "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
     "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
     "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
-    "%LOCALAPPDATA%\Programs\Python\Python39\python.exe"
-    "%ProgramFiles%\Python313\python.exe"
     "%ProgramFiles%\Python312\python.exe"
     "%ProgramFiles%\Python311\python.exe"
+    "%ProgramFiles%\Python313\python.exe"
     "%ProgramFiles%\Python310\python.exe"
-    "%ProgramFiles%\Python39\python.exe"
-    "C:\Python313\python.exe"
     "C:\Python312\python.exe"
     "C:\Python311\python.exe"
+    "C:\Python313\python.exe"
     "C:\Python310\python.exe"
-    "C:\Python39\python.exe"
 ) do (
     if exist %%P (
         set PYTHON_CMD=%%P
@@ -57,20 +59,43 @@ for %%P in (
     )
 )
 
+:: Method 3: Try generic 'py' launcher (may pick 3.14)
+py --version >nul 2>&1
+if not errorlevel 1 (
+    echo [WARN] Using default Python version. If install fails, install Python 3.12.
+    set PYTHON_CMD=py
+    goto :found_python
+)
+
+:: Method 4: Try 'python' from PATH (may pick 3.14)
+python --version >nul 2>&1
+if not errorlevel 1 (
+    echo [WARN] Using Python from PATH. If install fails, install Python 3.12.
+    set PYTHON_CMD=python
+    goto :found_python
+)
+
 :: Python not found
 echo [ERROR] Python not found!
 echo.
-echo Please install Python 3.9+ from https://python.org
+echo Please install Python 3.12 from https://python.org
+echo (Python 3.14 is in development and lacks pre-built packages)
 echo Make sure to check "Add Python to PATH" during installation.
-echo.
-echo Or, if Python is installed, you can manually set the path:
-echo   set PYTHON_CMD="C:\path\to\python.exe"
 echo.
 pause
 exit /b 1
 
 :found_python
 echo [OK] Found Python: %PYTHON_CMD%
+
+:: Delete old venv if it exists (in case it was created with wrong Python version)
+if exist "venv\pyvenv.cfg" (
+    findstr /C:"3.14" "venv\pyvenv.cfg" >nul 2>&1
+    if not errorlevel 1 (
+        echo [WARN] Existing venv uses Python 3.14. Recreating with stable version...
+        rmdir /s /q venv
+    )
+)
 
 :: Check if virtual environment exists, create if not
 if not exist "venv" (
@@ -97,11 +122,20 @@ python -c "import flask" >nul 2>&1
 if errorlevel 1 (
     echo [INFO] Installing requirements (this may take a minute)...
     echo [INFO] Using pre-built packages to avoid compilation...
-    pip install --only-binary :all: numpy pandas >nul 2>&1
+    pip install --only-binary :all: numpy pandas 2>nul
+    if errorlevel 1 (
+        echo [WARN] Pre-built numpy/pandas not available for this Python version.
+        echo [WARN] Trying with compilation... (requires Visual Studio Build Tools)
+    )
     pip install -r requirements.txt
     if errorlevel 1 (
-        echo [WARN] Some packages may need manual install. Trying alternative...
-        pip install --prefer-binary -r requirements.txt
+        echo [ERROR] Failed to install requirements.
+        echo.
+        echo TIP: If you see compilation errors, install Python 3.12 from python.org
+        echo      Python 3.14 is in development and many packages lack pre-built wheels.
+        echo.
+        pause
+        exit /b 1
     )
     echo [OK] Requirements installed.
 ) else (
